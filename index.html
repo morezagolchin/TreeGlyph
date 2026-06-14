@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3VU Tree Preview</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f7f4;
+      --panel: #ffffff;
+      --text: #20231f;
+      --muted: #646b62;
+      --line: #d8ddd2;
+      --accent: #247c6d;
+      --error: #a33a2b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 4vw, 2.5rem);
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .status {
+      min-height: 1.5rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      text-align: right;
+    }
+
+    .status.error {
+      color: var(--error);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    section {
+      min-width: 0;
+    }
+
+    .input-panel {
+      position: relative;
+    }
+
+    .editor {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      width: 100%;
+      min-height: 68vh;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    .line-numbers {
+      min-width: 3.5rem;
+      padding: 16px 10px;
+      border-right: 1px solid var(--line);
+      background: #eef2ea;
+      color: var(--muted);
+      font: 14px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      overflow: hidden;
+      text-align: right;
+      user-select: none;
+      white-space: pre;
+    }
+
+    label,
+    .output-title {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    textarea,
+    pre:not(.line-numbers) {
+      width: 100%;
+      margin: 0;
+      background: var(--panel);
+      color: var(--text);
+      font: 14px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      tab-size: 2;
+    }
+
+    textarea {
+      display: block;
+      min-height: calc(68vh - 2px);
+      border: 0;
+      padding: 16px;
+      resize: vertical;
+      outline: none;
+    }
+
+    textarea:focus {
+      box-shadow: inset 0 0 0 2px rgba(36, 124, 109, 0.28);
+    }
+
+    pre:not(.line-numbers) {
+      min-height: 68vh;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: auto;
+      padding: 16px;
+      white-space: pre;
+    }
+
+    .suggestions {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 5;
+      display: none;
+      max-height: 180px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 14px 32px rgba(32, 35, 31, 0.16);
+    }
+
+    .suggestions.visible {
+      display: block;
+    }
+
+    .suggestion {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      display: block;
+      font: 14px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      padding: 9px 12px;
+      text-align: left;
+    }
+
+    .suggestion:last-child {
+      border-bottom: 0;
+    }
+
+    .suggestion:hover,
+    .suggestion.active {
+      background: rgba(36, 124, 109, 0.12);
+    }
+
+    @media (max-width: 820px) {
+      header,
+      .workspace {
+        display: block;
+      }
+
+      .status {
+        margin-top: 6px;
+        text-align: left;
+      }
+
+      section + section {
+        margin-top: 18px;
+      }
+
+      textarea,
+      pre:not(.line-numbers) {
+        min-height: 42vh;
+      }
+
+      .editor {
+        min-height: 42vh;
+      }
+
+      textarea {
+        min-height: calc(42vh - 2px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>3VU Tree Preview</h1>
+      <div id="status" class="status">Ready</div>
+    </header>
+
+    <div class="workspace">
+      <section>
+        <label for="source">Input</label>
+        <div class="input-panel">
+          <div class="editor">
+            <pre id="lineNumbers" class="line-numbers" aria-hidden="true">1</pre>
+            <textarea id="source" spellcheck="false">Metazoa*/Eumetazoa*/Bilateria*/Protostomia,Deuterostomia,Incertae sedis (of uncertain placement)
+Protostomia/Ecdysozoa,Clylon-euralia,Spiralia
+Ecdysozoa/Panarthropoda/Arthropoda,Tradigara,Onychophora
+Deuterostomia/Chordata/Echinodermata/Hemichordata
+Chordata/Craniota,Acrania,Tunicata
+Arthropoda/Chelicerata,Myrapoda,Crustacea,Hexapoda</textarea>
+          </div>
+          <div id="suggestions" class="suggestions" role="listbox" aria-label="Name suggestions"></div>
+        </div>
+      </section>
+
+      <section>
+        <div class="output-title">Output</div>
+        <pre id="output" aria-live="polite"></pre>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const MAX_LINE_LENGTH = 70;
+
+    class Node {
+      constructor(name, vertical = false) {
+        this.name = name;
+        this.vertical = vertical;
+        this.children = new Map();
+      }
+    }
+
+    function cleanName(rawName) {
+      let text = rawName.trim();
+      const vertical = text.endsWith("*");
+      if (vertical) text = text.slice(0, -1).trim();
+      if (!text) throw new Error("empty hierarchy name");
+      return { name: text, vertical };
+    }
+
+    function splitLevel(level) {
+      return level.split(",").map((name) => name.trim()).filter(Boolean);
+    }
+
+    function shouldFlattenTail(levels) {
+      return levels.length > 2 && levels.every((level) => level.length === 1);
+    }
+
+    function addChild(parent, rawName, nodes) {
+      const { name, vertical } = cleanName(rawName);
+      let node = nodes.get(name);
+      if (!node) {
+        node = new Node(name, vertical);
+        nodes.set(name, node);
+      } else if (vertical) {
+        node.vertical = true;
+      }
+
+      if (!parent.children.has(name)) parent.children.set(name, node);
+      return node;
+    }
+
+    function parseTree(text) {
+      const root = new Node("");
+      const nodes = new Map();
+
+      text.split(/\r?\n/).forEach((rawLine, index) => {
+        const line = rawLine.trim();
+        if (!line) return;
+
+        const levels = line.split("/").map(splitLevel);
+        if (levels.some((level) => level.length === 0)) {
+          throw new Error(`line ${index + 1}: empty level`);
+        }
+
+        const startsFromExisting = levels[0].every((name) => nodes.has(cleanName(name).name));
+        let parents = [root];
+        let start = 0;
+
+        if (startsFromExisting) {
+          parents = levels[0].map((name) => nodes.get(cleanName(name).name));
+          start = 1;
+        }
+
+        const tail = levels.slice(start);
+        if (startsFromExisting && shouldFlattenTail(tail)) {
+          parents.forEach((parent) => {
+            tail.forEach((level) => addChild(parent, level[0], nodes));
+          });
+          return;
+        }
+
+        for (let i = start; i < levels.length; i += 1) {
+          const nextParents = [];
+          parents.forEach((parent) => {
+            levels[i].forEach((name) => nextParents.push(addChild(parent, name, nodes)));
+          });
+          parents = nextParents;
+        }
+      });
+
+      return root;
+    }
+
+    function labelLines(name, vertical = false) {
+      if (vertical) return [...name].filter((char) => char !== " ").map((char) => char.toUpperCase());
+      if (!name.includes("-")) return [name];
+
+      const parts = name.split("-");
+      const lines = [];
+      parts.forEach((part, index) => {
+        if (!part && index === parts.length - 1) return;
+        lines.push(part + (index < parts.length - 1 ? "-" : ""));
+      });
+      return lines.length ? lines : [name];
+    }
+
+    function padRows(rows, width) {
+      return rows.map((row) => row.padEnd(width, " "));
+    }
+
+    function overlay(left, right) {
+      const height = Math.max(left.length, right.length);
+      const leftWidth = Math.max(0, ...left.map((row) => row.length));
+      const rows = [];
+      for (let index = 0; index < height; index += 1) {
+        rows.push((left[index] || "").padEnd(leftWidth, " ") + (right[index] || ""));
+      }
+      return rows;
+    }
+
+    function stackChildBlocks(blocks) {
+      const rows = [];
+      blocks.forEach((block) => {
+        block.forEach((row, index) => {
+          rows.push((index === 0 ? "-> " : "   ") + row);
+        });
+      });
+      return rows;
+    }
+
+    function renderNode(node, detached = new Set(), forceVertical = false) {
+      const children = detached.has(node) ? [] : [...node.children.values()];
+      let label = labelLines(node.name, node.vertical || forceVertical);
+      const labelWidth = Math.max(...label.map((row) => row.length));
+      label = padRows(label, labelWidth);
+
+      if (!children.length) return label;
+
+      const childRows = stackChildBlocks(children.map((child) => renderNode(child, detached)));
+      const height = Math.max(label.length, childRows.length);
+      const connectorRow = Math.max(0, Math.floor(label.length / 2));
+      const leftRows = [];
+
+      for (let index = 0; index < height; index += 1) {
+        const labelRow = index < label.length ? label[index] : " ".repeat(labelWidth);
+        leftRows.push(labelRow + (index === connectorRow ? "---|" : "   |"));
+      }
+
+      return overlay(leftRows, childRows);
+    }
+
+    function renderForest(root, detached = new Set()) {
+      const rows = [];
+      [...root.children.values()].forEach((node, index) => {
+        if (index > 0) rows.push("");
+        rows.push(...renderNode(node, detached));
+      });
+      return rows;
+    }
+
+    function widest(rows) {
+      return Math.max(0, ...rows.map((row) => row.trimEnd().length));
+    }
+
+    function nodesByDepth(root) {
+      const found = [];
+      function visit(node, depth) {
+        if (node.children.size) found.push([depth, node]);
+        node.children.forEach((child) => visit(child, depth + 1));
+      }
+      root.children.forEach((child) => visit(child, 0));
+      return found;
+    }
+
+    function containsNode(parent, possibleChild) {
+      for (const child of parent.children.values()) {
+        if (child === possibleChild || containsNode(child, possibleChild)) return true;
+      }
+      return false;
+    }
+
+    function renderWithSplits(root, maxWidth = MAX_LINE_LENGTH) {
+      const detached = new Set();
+      let splitNodes = [];
+      const candidates = nodesByDepth(root).sort((a, b) => b[0] - a[0]);
+      let rows = renderForest(root, detached);
+
+      for (const [, node] of candidates) {
+        if (widest(rows) <= maxWidth) break;
+        if (detached.has(node)) continue;
+        detached.add(node);
+        splitNodes = splitNodes.filter((existing) => !containsNode(node, existing));
+        if (!splitNodes.some((existing) => containsNode(existing, node))) {
+          splitNodes.push(node);
+        }
+        rows = renderForest(root, detached);
+      }
+
+      const trees = [rows.map((row) => row.trimEnd()).join("\n").trimEnd()];
+      splitNodes.forEach((node) => {
+        trees.push(renderNode(node, new Set(), true).map((row) => row.trimEnd()).join("\n").trimEnd());
+      });
+      return trees.filter(Boolean).join("\n\n---\n\n");
+    }
+
+    const source = document.querySelector("#source");
+    const lineNumbers = document.querySelector("#lineNumbers");
+    const output = document.querySelector("#output");
+    const status = document.querySelector("#status");
+    const suggestions = document.querySelector("#suggestions");
+    let activeSuggestion = 0;
+    let currentSuggestions = [];
+    let currentToken = null;
+
+    function normalizedName(rawName) {
+      const trimmed = rawName.trim();
+      return trimmed.endsWith("*") ? trimmed.slice(0, -1).trim() : trimmed;
+    }
+
+    function collectKnownNames(text) {
+      const names = new Map();
+      text.split(/\r?\n/).forEach((line) => {
+        line.split(/[\/,]/).forEach((part) => {
+          const name = normalizedName(part);
+          if (name) names.set(name.toLowerCase(), name);
+        });
+      });
+      return [...names.values()].sort((a, b) => a.localeCompare(b));
+    }
+
+    function currentNameToken(text, cursor) {
+      const before = text.slice(0, cursor);
+      const start = Math.max(before.lastIndexOf("/"), before.lastIndexOf(","), before.lastIndexOf("\n")) + 1;
+      const after = text.slice(cursor);
+      const nextBreaks = [after.indexOf("/"), after.indexOf(","), after.indexOf("\n")]
+        .filter((index) => index >= 0);
+      const end = cursor + (nextBreaks.length ? Math.min(...nextBreaks) : after.length);
+      const raw = text.slice(start, end);
+      const prefix = text.slice(start, cursor).trimStart();
+      const leadingSpace = text.slice(start, cursor).length - prefix.length;
+
+      return {
+        start: start + leadingSpace,
+        end,
+        raw,
+        prefix,
+      };
+    }
+
+    function updateSuggestions() {
+      currentToken = currentNameToken(source.value, source.selectionStart);
+      const prefix = normalizedName(currentToken.prefix).toLowerCase();
+
+      if (!prefix) {
+        hideSuggestions();
+        return;
+      }
+
+      const currentName = normalizedName(currentToken.raw).toLowerCase();
+      currentSuggestions = collectKnownNames(source.value)
+        .filter((name) => {
+          const lower = name.toLowerCase();
+          return lower !== currentName && lower.startsWith(prefix);
+        })
+        .slice(0, 8);
+
+      activeSuggestion = 0;
+      renderSuggestions();
+    }
+
+    function renderSuggestions() {
+      suggestions.innerHTML = "";
+      if (!currentSuggestions.length) {
+        hideSuggestions();
+        return;
+      }
+
+      currentSuggestions.forEach((name, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `suggestion${index === activeSuggestion ? " active" : ""}`;
+        button.setAttribute("role", "option");
+        button.setAttribute("aria-selected", index === activeSuggestion ? "true" : "false");
+        button.textContent = name;
+        button.addEventListener("mousedown", (event) => {
+          event.preventDefault();
+          acceptSuggestion(index);
+        });
+        suggestions.appendChild(button);
+      });
+
+      suggestions.classList.add("visible");
+    }
+
+    function hideSuggestions() {
+      currentSuggestions = [];
+      suggestions.classList.remove("visible");
+      suggestions.innerHTML = "";
+    }
+
+    function acceptSuggestion(index = activeSuggestion) {
+      const name = currentSuggestions[index];
+      if (!name || !currentToken) return;
+
+      const keepsVerticalMarker = currentToken.raw.trimEnd().endsWith("*");
+      const replacement = name + (keepsVerticalMarker ? "*" : "");
+      const before = source.value.slice(0, currentToken.start);
+      const after = source.value.slice(currentToken.end);
+      source.value = before + replacement + after;
+
+      const cursor = before.length + replacement.length;
+      source.setSelectionRange(cursor, cursor);
+      hideSuggestions();
+      updateLineNumbers();
+      updatePreview();
+      source.focus();
+    }
+
+    function updateLineNumbers() {
+      const lineCount = source.value.split(/\r?\n/).length;
+      lineNumbers.textContent = Array.from({ length: lineCount }, (_, index) => index + 1).join("\n");
+      lineNumbers.style.transform = `translateY(${-source.scrollTop}px)`;
+    }
+
+    function updatePreview() {
+      try {
+        const rendered = renderWithSplits(parseTree(source.value));
+        output.textContent = rendered || "";
+        const maxLine = widest(rendered.split("\n"));
+        status.textContent = rendered ? `Longest line: ${maxLine} characters` : "Ready";
+        status.classList.remove("error");
+      } catch (error) {
+        output.textContent = "";
+        status.textContent = error.message;
+        status.classList.add("error");
+      }
+    }
+
+    source.addEventListener("input", () => {
+      updateLineNumbers();
+      updatePreview();
+      updateSuggestions();
+    });
+    source.addEventListener("scroll", updateLineNumbers);
+    source.addEventListener("click", updateSuggestions);
+    source.addEventListener("keyup", (event) => {
+      if (["ArrowDown", "ArrowUp", "Enter", "Tab", "Escape"].includes(event.key)) return;
+      updateSuggestions();
+    });
+    source.addEventListener("keydown", (event) => {
+      if (!currentSuggestions.length) return;
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        activeSuggestion = (activeSuggestion + 1) % currentSuggestions.length;
+        renderSuggestions();
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        activeSuggestion = (activeSuggestion - 1 + currentSuggestions.length) % currentSuggestions.length;
+        renderSuggestions();
+      } else if (event.key === "Tab" || event.key === "Enter") {
+        event.preventDefault();
+        acceptSuggestion();
+      } else if (event.key === "Escape") {
+        hideSuggestions();
+      }
+    });
+    source.addEventListener("blur", () => {
+      window.setTimeout(hideSuggestions, 120);
+    });
+    updateLineNumbers();
+    updatePreview();
+  </script>
+</body>
+</html>
