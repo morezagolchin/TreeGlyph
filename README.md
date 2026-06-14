@@ -1,11 +1,15 @@
-# 3VU
+# TreeGlyph
 
-3VU creates a compact tree view from a hierarchical name list.
+TreeGlyph is an Obsidian plugin that renders hierarchy code blocks as compact ASCII tree views.
 
-You can use it in two ways:
+Write a `treeglyph` code block in a note, and TreeGlyph replaces it with the rendered tree in Obsidian's reading view.
 
-- Run the Python program with an input text file and an output text file.
-- Open the HTML editor in a browser and see the output update live while you type.
+````markdown
+```treeglyph
+Root/Branch/Leaf
+Branch/Leaf A,Leaf B
+```
+````
 
 ## Instructions
 
@@ -40,23 +44,60 @@ Use `-` inside a name when you want that name to split across multiple output li
 Protostomia/Clylon-euralia
 ```
 
-To convert a text file from the command line:
+Use either `treeglyph` or the shorter `tg` as the code block language:
 
-```bash
-python3 tree_generator.py input.txt output.txt
+````markdown
+```tg
+Root/Branch/Leaf
+```
+````
+
+## Development
+
+For a manual local install, copy this folder into an Obsidian vault:
+
+```txt
+YourVault/.obsidian/plugins/treeglyph
 ```
 
-To use the live editor, open `index.html` in your browser. The editor includes line numbers, live output, and autocomplete suggestions for names that already exist in the input.
+Then enable **TreeGlyph** in Obsidian's Community plugins settings.
+
+The plugin can run from the included `main.js`, `manifest.json`, and `styles.css` files. If you change the TypeScript source, rebuild `main.js`.
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Build the plugin:
+
+```bash
+npm run build
+```
+
+For development builds:
+
+```bash
+npm run dev
+```
+
+During development, you can symlink this project folder into the same Obsidian plugins directory.
 
 ## Example
 
 FROM:
-```
+```treeglyph
 Metazoa*/Eumetazoa*/Bilateria*/Protostomia,Deuterostomia,Incertae sedis (of uncertain placement)
+
 Protostomia/Ecdysozoa,Clylon-euralia,Spiralia
+
 Ecdysozoa/Panarthropoda/Arthropoda,Tradigara,Onychophora
+
 Deuterostomia/Chordata/Echinodermata/Hemichordata
+
 Chordata/Craniota,Acrania,Tunicata
+
 Arthropoda/Chelicerata,Myrapoda,Crustacea,Hexapoda
 ```
 

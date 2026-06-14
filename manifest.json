@@ -1,0 +1,10 @@
+{
+  "id": "treeglyph",
+  "name": "TreeGlyph",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Render hierarchy code blocks as compact ASCII tree views.",
+  "author": "Reza",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}
