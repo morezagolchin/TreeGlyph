@@ -53,7 +53,11 @@
   cursor: default;
 }
 
-.treeglyph-label:hover {
+.treeglyph-has-tooltip {
+  cursor: help;
+}
+
+.treeglyph-has-tooltip:hover {
   color: var(--text-accent);
 }
 

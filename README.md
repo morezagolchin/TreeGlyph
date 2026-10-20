@@ -2,7 +2,7 @@
 
 TreeGlyph is an Obsidian plugin that turns a simple, human-readable hierarchy syntax into cladogram-style tree maps.
 
-Write a `treeglyph` code block in a note, and TreeGlyph replaces it with the rendered map in reading view and Live Preview. Branches run left to right with elbow connectors, and each lineage below a tree's first split gets its own colour. Wide maps scroll horizontally. Hover over any name to see its full path from the root in a tooltip.
+Write a `treeglyph` code block in a note, and TreeGlyph replaces it with the rendered map in reading view and Live Preview. Branches run left to right with elbow connectors, and each lineage below a tree's first split gets its own colour. Wide maps scroll horizontally, and names can carry a tooltip that shows on hover.
 
 ````markdown
 ```treeglyph
@@ -55,6 +55,20 @@ Heterokontophyten/Bacillariophyceae((diatoms)).kl,Phaeophyceae((brown algae)).kl
 ```
 
 Single parentheses stay part of the name, as in `Incertae sedis (of uncertain placement)`.
+
+Add `:` and a text in double quotes after a name to give it a tooltip, shown when you hover over the name. Names without one show no tooltip. The text may contain anything except `""`. Single quotes are not tooltips, so `Name:"text"` stays part of the name:
+
+```txt
+Heterokontophyten/Bacillariophyceae.kl:""Single-celled algae in glass shells"",Phaeophyceae.kl
+```
+
+You can also write tooltips on their own lines, outside the tree, before or after it. A line with only names that each have a tooltip sets those tooltips and adds nothing to the tree:
+
+```txt
+Eukaryota/Chromalveolatae,Excavatae
+Excavatae:""Single-celled, mostly flagellated eukaryotes""
+Chromalveolatae:""Algae and protists with red-algal plastids"",Eukaryota:""Organisms whose cells have a nucleus""
+```
 
 Use either `treeglyph` or the shorter `tg` as the code block language:
 

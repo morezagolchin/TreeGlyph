@@ -5,6 +5,8 @@ export class TreeNode {
   rank = "";
   // Second name written as `Name((other name))`, shown after the name. Empty when not given.
   altName = "";
+  // Text written as `Name:""text""`, shown when hovering the name. Empty when not given.
+  tooltip = "";
   children = new Map<string, TreeNode>();
 
   constructor(name: string) {
@@ -17,33 +19,22 @@ type CleanName = {
   vertical: boolean;
   rank: string;
   altName: string;
+  tooltip: string;
 };
 
 // A rank is whatever follows the last `.`, as long as it has no spaces: `Name.kl`.
 const RANK_SUFFIX = /^(.+)\.([^.\s]+)$/;
 const ALT_NAME = /\(\((.*?)\)\)/;
+const TOOLTIP = /:\s*""(.*?)""/;
 
-// Splits on `separator`, except inside ((alternative names)), which may contain anything.
-function splitOutsideAltNames(text: string, separator: string): string[] {
-  const parts: string[] = [];
-  let start = 0;
-  let inside = false;
+// ((Alternative names)) and :""tooltips"" may contain anything, separators included.
+const PROTECTED = /\(\(.*?\)\)|:\s*"".*?""/g;
+const MASK = "\u0000";
 
-  for (let index = 0; index < text.length; index += 1) {
-    if (!inside && text.startsWith("((", index)) {
-      inside = true;
-      index += 1;
-    } else if (inside && text.startsWith("))", index)) {
-      inside = false;
-      index += 1;
-    } else if (!inside && text[index] === separator) {
-      parts.push(text.slice(start, index));
-      start = index + 1;
-    }
-  }
-
-  parts.push(text.slice(start));
-  return parts;
+// Splits on `separator`, except inside protected text.
+function splitOutsideProtected(text: string, separator: string): string[] {
+  const masked = text.replace(PROTECTED, (region) => region.split(separator).join(MASK));
+  return masked.split(separator).map((part) => part.split(MASK).join(separator));
 }
 
 function cleanName(rawName: string): CleanName {
@@ -51,6 +42,14 @@ function cleanName(rawName: string): CleanName {
   let vertical = false;
   let rank = "";
   let altName = "";
+  let tooltip = "";
+
+  // Taken out first, so the tooltip text itself may contain dots, parentheses or `*`.
+  const tip = TOOLTIP.exec(text);
+  if (tip) {
+    tooltip = tip[1].trim();
+    text = text.replace(TOOLTIP, "").trim();
+  }
 
   const alt = ALT_NAME.exec(text);
   if (alt) {
@@ -77,11 +76,11 @@ function cleanName(rawName: string): CleanName {
   if (!text) {
     throw new Error("empty hierarchy name");
   }
-  return { name: text, vertical, rank, altName };
+  return { name: text, vertical, rank, altName, tooltip };
 }
 
 // Details given on any mention of a name apply to it, including later ones.
-function applyDetails(node: TreeNode, { vertical, rank, altName }: CleanName): void {
+function applyDetails(node: TreeNode, { vertical, rank, altName, tooltip }: CleanName): void {
   if (vertical) {
     node.vertical = true;
   }
@@ -91,10 +90,13 @@ function applyDetails(node: TreeNode, { vertical, rank, altName }: CleanName): v
   if (altName) {
     node.altName = altName;
   }
+  if (tooltip) {
+    node.tooltip = tooltip;
+  }
 }
 
 function splitLevel(level: string): string[] {
-  return splitOutsideAltNames(level, ",")
+  return splitOutsideProtected(level, ",")
     .map((name) => name.trim())
     .filter(Boolean);
 }
@@ -125,6 +127,7 @@ function addChild(parent: TreeNode, rawName: string, nodes: Map<string, TreeNode
 export function parseTree(text: string): TreeNode {
   const root = new TreeNode("");
   const nodes = new Map<string, TreeNode>();
+  const tooltipLines: Array<{ line: number; names: string[] }> = [];
 
   text.split(/\r?\n/).forEach((rawLine, index) => {
     const line = rawLine.trim();
@@ -132,9 +135,15 @@ export function parseTree(text: string): TreeNode {
       return;
     }
 
-    const levels = splitOutsideAltNames(line, "/").map(splitLevel);
+    const levels = splitOutsideProtected(line, "/").map(splitLevel);
     if (levels.some((level) => level.length === 0)) {
       throw new Error(`line ${index + 1}: empty level in ${line}`);
+    }
+
+    // A line of names that all have tooltips only describes them, so it can go anywhere.
+    if (levels.length === 1 && levels[0].every((name) => cleanName(name).tooltip)) {
+      tooltipLines.push({ line: index + 1, names: levels[0] });
+      return;
     }
 
     const startsFromExisting = levels[0].every((name) => nodes.has(cleanName(name).name));
@@ -168,6 +177,17 @@ export function parseTree(text: string): TreeNode {
       });
       parents = nextParents;
     }
+  });
+
+  tooltipLines.forEach(({ line, names }) => {
+    names.forEach((rawName) => {
+      const clean = cleanName(rawName);
+      const node = nodes.get(clean.name);
+      if (!node) {
+        throw new Error(`line ${line}: ${clean.name} is not in the tree`);
+      }
+      applyDetails(node, clean);
+    });
   });
 
   return root;

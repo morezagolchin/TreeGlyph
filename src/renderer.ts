@@ -7,14 +7,6 @@ function lineageClass(lineage: number | null): string {
   return lineage === null ? "treeglyph-trunk" : `treeglyph-lineage-${lineage}`;
 }
 
-function lineagePath(branch: Branch): string {
-  const names: string[] = [];
-  for (let current: Branch | null = branch; current; current = current.parent) {
-    names.unshift(current.node.name);
-  }
-  return names.join(" › ");
-}
-
 function drawLines(map: HTMLElement, layout: Layout): void {
   const { width, height } = layout;
   const svg = map.createSvg("svg", {
@@ -44,7 +36,7 @@ export function renderTreeGlyph(source: string, container: HTMLElement): void {
   try {
     const labels: Array<[Branch, HTMLElement]> = [];
     walk(trees, (branch) => {
-      const { name, rank, altName, vertical } = branch.node;
+      const { name, rank, altName, tooltip, vertical } = branch.node;
       const label = map.createSpan({
         cls: vertical ? ["treeglyph-label", "treeglyph-label-vertical"] : "treeglyph-label",
       });
@@ -57,7 +49,10 @@ export function renderTreeGlyph(source: string, container: HTMLElement): void {
         label.appendText(" ");
         label.createSpan({ cls: "treeglyph-alt", text: altName });
       }
-      setTooltip(label, lineagePath(branch));
+      if (tooltip) {
+        label.addClass("treeglyph-has-tooltip");
+        setTooltip(label, tooltip);
+      }
       labels.push([branch, label]);
     });
 
