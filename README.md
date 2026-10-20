@@ -54,35 +54,35 @@ Root/Branch/Leaf
 
 ## Development
 
-For a manual local install, copy this folder into an Obsidian vault:
-
-```txt
-YourVault/.obsidian/plugins/treeglyph
-```
-
-Then enable **TreeGlyph** in Obsidian's Community plugins settings.
-
-The plugin can run from the included `main.js`, `manifest.json`, and `styles.css` files. If you change the TypeScript source, rebuild `main.js`.
-
 Install dependencies:
 
 ```bash
 npm install
 ```
 
-Build the plugin:
+Build `main.js` (type-checks first):
 
 ```bash
 npm run build
 ```
 
-For development builds:
+For a watch build while developing:
 
 ```bash
 npm run dev
 ```
 
-During development, you can symlink this project folder into the same Obsidian plugins directory.
+`main.js` is build output and is not committed. To try the plugin, create the folder below in a vault and copy or symlink `main.js`, `manifest.json`, and `styles.css` into it, then enable **TreeGlyph** in Obsidian's Community plugins settings:
+
+```txt
+YourVault/.obsidian/plugins/treeglyph
+```
+
+## Releasing
+
+1. Run `npm version patch` (or `minor` / `major`). This updates `package.json`, `manifest.json`, and `versions.json` together and creates a git tag.
+2. Push the commit and tag.
+3. Create a GitHub release whose tag is the bare version (for example `0.1.1`, no `v`) and attach `main.js`, `manifest.json`, and `styles.css`.
 
 ## Example
 

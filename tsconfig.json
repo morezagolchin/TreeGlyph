@@ -1,20 +1,16 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "inlineSourceMap": true,
-    "inlineSources": true,
     "module": "ESNext",
-    "target": "ES2018",
-    "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node",
-    "isolatedModules": true,
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
+    "moduleResolution": "bundler",
+    "target": "ES2020",
     "lib": [
       "DOM",
-      "ES2018"
-    ]
+      "ES2020"
+    ],
+    "isolatedModules": true,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts"

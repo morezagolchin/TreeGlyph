@@ -31,7 +31,7 @@ const context = await esbuild.context({
   minify: production,
   outfile: "main.js",
   sourcemap: production ? false : "inline",
-  target: "es2018",
+  target: "es2020",
   treeShaking: true,
 });
 
