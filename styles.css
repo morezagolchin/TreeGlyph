@@ -1,22 +1,118 @@
 .treeglyph-rendered {
   margin: 0.75rem 0;
   overflow-x: auto;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
 }
 
-.treeglyph-rendered pre {
-  margin: 0;
-  padding: 0.75rem;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  background: var(--background-secondary);
+.treeglyph-map {
+  position: relative;
+  font-family: var(--font-interface);
+  font-size: calc(var(--font-text-size) * 0.9);
+  line-height: 1.25;
+}
+
+/* Rendered off-screen in the document body while the labels are measured. */
+.treeglyph-measuring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.treeglyph-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+}
+
+.treeglyph-line {
+  fill: none;
+  stroke: var(--treeglyph-color);
+  stroke-width: 2px;
+}
+
+.treeglyph-junction {
+  fill: var(--background-primary);
+  stroke: var(--treeglyph-color);
+  stroke-width: 2px;
+}
+
+.treeglyph-dot {
+  fill: var(--treeglyph-color);
+}
+
+.treeglyph-label {
+  position: absolute;
+  white-space: nowrap;
   color: var(--text-normal);
-  font-family: var(--font-monospace);
-  font-size: var(--font-smaller);
-  line-height: 1.45;
-  white-space: pre;
+  font-weight: var(--font-semibold);
+  cursor: default;
+}
+
+.treeglyph-label:hover {
+  color: var(--text-accent);
+}
+
+.treeglyph-label-vertical {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.8em;
+  font-weight: var(--font-medium);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Lineage colours, softened towards the text colour so they read well on light and dark themes. */
+.treeglyph-trunk {
+  --treeglyph-color: var(--text-muted);
+}
+
+.treeglyph-lineage-0 {
+  --treeglyph-color: color-mix(in srgb, var(--color-orange) 75%, var(--text-normal));
+}
+
+.treeglyph-lineage-1 {
+  --treeglyph-color: color-mix(in srgb, var(--color-cyan) 75%, var(--text-normal));
+}
+
+.treeglyph-lineage-2 {
+  --treeglyph-color: color-mix(in srgb, var(--color-blue) 75%, var(--text-normal));
+}
+
+.treeglyph-lineage-3 {
+  --treeglyph-color: color-mix(in srgb, var(--color-red) 75%, var(--text-normal));
+}
+
+.treeglyph-lineage-4 {
+  --treeglyph-color: color-mix(in srgb, var(--color-green) 75%, var(--text-normal));
+}
+
+.treeglyph-lineage-5 {
+  --treeglyph-color: color-mix(in srgb, var(--color-purple) 75%, var(--text-normal));
+}
+
+.treeglyph-lineage-6 {
+  --treeglyph-color: color-mix(in srgb, var(--color-pink) 75%, var(--text-normal));
+}
+
+.treeglyph-lineage-7 {
+  --treeglyph-color: color-mix(in srgb, var(--color-yellow) 75%, var(--text-normal));
+}
+
+.treeglyph-error {
+  border-color: var(--text-error);
 }
 
 .treeglyph-error pre {
-  border-color: var(--text-error);
+  margin: 0;
+  padding: 0.75rem;
+  background: none;
   color: var(--text-error);
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
 }

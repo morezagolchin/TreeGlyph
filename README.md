@@ -1,8 +1,8 @@
 # TreeGlyph
 
-TreeGlyph is an Obsidian plugin that renders hierarchy code blocks as compact ASCII tree views.
+TreeGlyph is an Obsidian plugin that turns a simple, human-readable hierarchy syntax into cladogram-style tree maps.
 
-Write a `treeglyph` code block in a note, and TreeGlyph replaces it with the rendered tree in Obsidian's reading view.
+Write a `treeglyph` code block in a note, and TreeGlyph replaces it with the rendered map in reading view and Live Preview. Branches run left to right with elbow connectors, and each lineage below a tree's first split gets its own colour. Wide maps scroll horizontally. Hover over any name to see its full path from the root in a tooltip.
 
 ````markdown
 ```treeglyph
@@ -32,16 +32,10 @@ Root/Branch
 Branch/Leaf A,Leaf B
 ```
 
-Add `*` after a name to render that name vertically:
+Add `*` after a name to show it as a small rotated label, like the root of a cladogram:
 
 ```txt
-Metazoa*/Eumetazoa*/Bilateria*
-```
-
-Use `-` inside a name when you want that name to split across multiple output lines:
-
-```txt
-Protostomia/Clylon-euralia
+Eukaryota*/Chromalveolatae,Excavatae,Primoplantae
 ```
 
 Use either `treeglyph` or the shorter `tg` as the code block language:
@@ -86,7 +80,6 @@ YourVault/.obsidian/plugins/treeglyph
 
 ## Example
 
-FROM:
 ```treeglyph
 Metazoa*/Eumetazoa*/Bilateria*/Protostomia,Deuterostomia,Incertae sedis (of uncertain placement)
 
@@ -101,30 +94,4 @@ Chordata/Craniota,Acrania,Tunicata
 Arthropoda/Chelicerata,Myrapoda,Crustacea,Hexapoda
 ```
 
-
-
-TO:
-```
-M   | E   | B   |-> Protos- |-> Ecdysozoa |-> Panarth- -|-> Arthropoda
-E   | U   | I   |   tomia   |-> Clylon-        ropoda   |-> Tradigara 
-T   | M   | L   |           |   euralia                 |-> Onychophora
-A --| E --| A --|           |-> Spiralia           
-Z   | T   | T   |           
-O   | A   | E   |-> Deuterostomia --|-> Chordata -------|-> Craniota
-A   | Z   | R   |                   |-> Echinodermata   |-> Acrania
-    | O   | I   |                   |-> Hemichordata    |-> Tunicata
-    | A   | A   |-> Incertae sedis (of uncertain placement)
-
----
-
-A    |-> Chelicerata 
-R    |               
-T    |               
-H    |-> Myrapoda
-R ---|            
-O    |                            
-P    |-> Crustacea
-O    |             
-D    |           
-A    |-> Hexapoda
-```
+This renders `Metazoa`, `Eumetazoa`, and `Bilateria` as rotated labels on a neutral trunk. At `Bilateria` the tree splits, and `Protostomia`, `Deuterostomia`, and `Incertae sedis` each get their own colour, which their descendants keep. Inner nodes sit on their branch above an open junction; leaves end in a filled dot.

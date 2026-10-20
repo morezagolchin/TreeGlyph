@@ -1,7 +1,7 @@
 {
   "name": "treeglyph",
   "version": "0.1.0",
-  "description": "Obsidian plugin that renders hierarchy code blocks as compact ASCII tree views.",
+  "description": "Obsidian plugin that renders hierarchy code blocks as compact, interactive tree views.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
