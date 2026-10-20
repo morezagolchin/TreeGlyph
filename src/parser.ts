@@ -1,15 +1,14 @@
 export class TreeNode {
   name: string;
-  vertical: boolean;
+  vertical = false;
   // Taxonomic level written as `Name.kl`, shown as a prefix: "kl. Name". Empty when not given.
-  rank: string;
-  children: Map<string, TreeNode>;
+  rank = "";
+  // Second name written as `Name((other name))`, shown after the name. Empty when not given.
+  altName = "";
+  children = new Map<string, TreeNode>();
 
-  constructor(name: string, vertical = false, rank = "") {
+  constructor(name: string) {
     this.name = name;
-    this.vertical = vertical;
-    this.rank = rank;
-    this.children = new Map();
   }
 }
 
@@ -17,15 +16,47 @@ type CleanName = {
   name: string;
   vertical: boolean;
   rank: string;
+  altName: string;
 };
 
 // A rank is whatever follows the last `.`, as long as it has no spaces: `Name.kl`.
 const RANK_SUFFIX = /^(.+)\.([^.\s]+)$/;
+const ALT_NAME = /\(\((.*?)\)\)/;
+
+// Splits on `separator`, except inside ((alternative names)), which may contain anything.
+function splitOutsideAltNames(text: string, separator: string): string[] {
+  const parts: string[] = [];
+  let start = 0;
+  let inside = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    if (!inside && text.startsWith("((", index)) {
+      inside = true;
+      index += 1;
+    } else if (inside && text.startsWith("))", index)) {
+      inside = false;
+      index += 1;
+    } else if (!inside && text[index] === separator) {
+      parts.push(text.slice(start, index));
+      start = index + 1;
+    }
+  }
+
+  parts.push(text.slice(start));
+  return parts;
+}
 
 function cleanName(rawName: string): CleanName {
   let text = rawName.trim();
   let vertical = false;
   let rank = "";
+  let altName = "";
+
+  const alt = ALT_NAME.exec(text);
+  if (alt) {
+    altName = alt[1].trim();
+    text = text.replace(ALT_NAME, "").trim();
+  }
 
   // `*` may come before or after the rank: `Name*.kl` or `Name.kl*`.
   const stripStar = (): void => {
@@ -46,22 +77,24 @@ function cleanName(rawName: string): CleanName {
   if (!text) {
     throw new Error("empty hierarchy name");
   }
-  return { name: text, vertical, rank };
+  return { name: text, vertical, rank, altName };
 }
 
-// Flags given on a later mention of a name still apply to it.
-function applyFlags(node: TreeNode, { vertical, rank }: CleanName): void {
+// Details given on any mention of a name apply to it, including later ones.
+function applyDetails(node: TreeNode, { vertical, rank, altName }: CleanName): void {
   if (vertical) {
     node.vertical = true;
   }
   if (rank) {
     node.rank = rank;
   }
+  if (altName) {
+    node.altName = altName;
+  }
 }
 
 function splitLevel(level: string): string[] {
-  return level
-    .split(",")
+  return splitOutsideAltNames(level, ",")
     .map((name) => name.trim())
     .filter(Boolean);
 }
@@ -76,11 +109,10 @@ function addChild(parent: TreeNode, rawName: string, nodes: Map<string, TreeNode
   let node = nodes.get(name);
 
   if (!node) {
-    node = new TreeNode(name, clean.vertical, clean.rank);
+    node = new TreeNode(name);
     nodes.set(name, node);
-  } else {
-    applyFlags(node, clean);
   }
+  applyDetails(node, clean);
 
   if (!parent.children.has(name)) {
     parent.children.set(name, node);
@@ -100,7 +132,7 @@ export function parseTree(text: string): TreeNode {
       return;
     }
 
-    const levels = line.split("/").map(splitLevel);
+    const levels = splitOutsideAltNames(line, "/").map(splitLevel);
     if (levels.some((level) => level.length === 0)) {
       throw new Error(`line ${index + 1}: empty level in ${line}`);
     }
@@ -113,7 +145,7 @@ export function parseTree(text: string): TreeNode {
       parents = levels[0].map((rawName) => {
         const clean = cleanName(rawName);
         const node = nodes.get(clean.name) as TreeNode;
-        applyFlags(node, clean);
+        applyDetails(node, clean);
         return node;
       });
       start = 1;

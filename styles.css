@@ -57,9 +57,14 @@
   color: var(--text-accent);
 }
 
-.treeglyph-rank {
+.treeglyph-rank,
+.treeglyph-alt {
   color: var(--text-muted);
   font-weight: var(--font-normal);
+}
+
+.treeglyph-alt {
+  font-style: italic;
 }
 
 .treeglyph-label-vertical {
@@ -72,8 +77,9 @@
   color: var(--text-muted);
 }
 
-/* Ranks are shown exactly as written. */
-.treeglyph-label-vertical .treeglyph-rank {
+/* Ranks and alternative names are shown exactly as written. */
+.treeglyph-label-vertical .treeglyph-rank,
+.treeglyph-label-vertical .treeglyph-alt {
   text-transform: none;
 }
 

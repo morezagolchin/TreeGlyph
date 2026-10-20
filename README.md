@@ -47,6 +47,15 @@ Florideophyceae.kl/Ceramiales.o,Nemalionales.o
 
 Only the text after the last `.` counts as the level, and only if it has no spaces, so names like `St. Helena` stay as they are.
 
+Add a second or alternative name in double parentheses right after a name. It is shown after the name in grey italics, and it may contain spaces, dots, commas, and slashes. Like the level, it can be given on a later line and combines with `.level` and `*`:
+
+```txt
+Heterokontobionta/Dinophyten((dinoflagellates)),Heterokontophyten
+Heterokontophyten/Bacillariophyceae((diatoms)).kl,Phaeophyceae((brown algae)).kl
+```
+
+Single parentheses stay part of the name, as in `Incertae sedis (of uncertain placement)`.
+
 Use either `treeglyph` or the shorter `tg` as the code block language:
 
 ````markdown

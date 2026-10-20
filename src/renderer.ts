@@ -44,7 +44,7 @@ export function renderTreeGlyph(source: string, container: HTMLElement): void {
   try {
     const labels: Array<[Branch, HTMLElement]> = [];
     walk(trees, (branch) => {
-      const { name, rank, vertical } = branch.node;
+      const { name, rank, altName, vertical } = branch.node;
       const label = map.createSpan({
         cls: vertical ? ["treeglyph-label", "treeglyph-label-vertical"] : "treeglyph-label",
       });
@@ -53,6 +53,10 @@ export function renderTreeGlyph(source: string, container: HTMLElement): void {
         label.appendText(" ");
       }
       label.appendText(name);
+      if (altName) {
+        label.appendText(" ");
+        label.createSpan({ cls: "treeglyph-alt", text: altName });
+      }
       setTooltip(label, lineagePath(branch));
       labels.push([branch, label]);
     });
