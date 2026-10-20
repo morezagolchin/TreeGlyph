@@ -38,6 +38,15 @@ Add `*` after a name to show it as a small rotated label, like the root of a cla
 Eukaryota*/Chromalveolatae,Excavatae,Primoplantae
 ```
 
+Add `.` and a level after a name to show its taxonomic level in grey in front of it. `Bacillariophyceae.kl` is shown as **kl.** Bacillariophyceae. The level is written exactly as you type it, so any abbreviation works (`kl`, `o`, `fam`, `Ordnung`, …). It can also be given on a later line where the name is reused, and it combines with `*` (`Eukaryota.domain*`):
+
+```txt
+Heterokontophyten/Bacillariophyceae.kl,Phaeophyceae.kl
+Florideophyceae.kl/Ceramiales.o,Nemalionales.o
+```
+
+Only the text after the last `.` counts as the level, and only if it has no spaces, so names like `St. Helena` stay as they are.
+
 Use either `treeglyph` or the shorter `tg` as the code block language:
 
 ````markdown

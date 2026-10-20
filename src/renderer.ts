@@ -44,10 +44,15 @@ export function renderTreeGlyph(source: string, container: HTMLElement): void {
   try {
     const labels: Array<[Branch, HTMLElement]> = [];
     walk(trees, (branch) => {
+      const { name, rank, vertical } = branch.node;
       const label = map.createSpan({
-        cls: branch.node.vertical ? ["treeglyph-label", "treeglyph-label-vertical"] : "treeglyph-label",
-        text: branch.node.name,
+        cls: vertical ? ["treeglyph-label", "treeglyph-label-vertical"] : "treeglyph-label",
       });
+      if (rank) {
+        label.createSpan({ cls: "treeglyph-rank", text: `${rank}.` });
+        label.appendText(" ");
+      }
+      label.appendText(name);
       setTooltip(label, lineagePath(branch));
       labels.push([branch, label]);
     });

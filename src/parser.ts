@@ -1,11 +1,14 @@
 export class TreeNode {
   name: string;
   vertical: boolean;
+  // Taxonomic level written as `Name.kl`, shown as a prefix: "kl. Name". Empty when not given.
+  rank: string;
   children: Map<string, TreeNode>;
 
-  constructor(name: string, vertical = false) {
+  constructor(name: string, vertical = false, rank = "") {
     this.name = name;
     this.vertical = vertical;
+    this.rank = rank;
     this.children = new Map();
   }
 }
@@ -13,18 +16,47 @@ export class TreeNode {
 type CleanName = {
   name: string;
   vertical: boolean;
+  rank: string;
 };
+
+// A rank is whatever follows the last `.`, as long as it has no spaces: `Name.kl`.
+const RANK_SUFFIX = /^(.+)\.([^.\s]+)$/;
 
 function cleanName(rawName: string): CleanName {
   let text = rawName.trim();
-  const vertical = text.endsWith("*");
-  if (vertical) {
-    text = text.slice(0, -1).trim();
+  let vertical = false;
+  let rank = "";
+
+  // `*` may come before or after the rank: `Name*.kl` or `Name.kl*`.
+  const stripStar = (): void => {
+    if (text.endsWith("*")) {
+      vertical = true;
+      text = text.slice(0, -1).trim();
+    }
+  };
+
+  stripStar();
+  const match = RANK_SUFFIX.exec(text);
+  if (match) {
+    text = match[1].trim();
+    rank = match[2];
   }
+  stripStar();
+
   if (!text) {
     throw new Error("empty hierarchy name");
   }
-  return { name: text, vertical };
+  return { name: text, vertical, rank };
+}
+
+// Flags given on a later mention of a name still apply to it.
+function applyFlags(node: TreeNode, { vertical, rank }: CleanName): void {
+  if (vertical) {
+    node.vertical = true;
+  }
+  if (rank) {
+    node.rank = rank;
+  }
 }
 
 function splitLevel(level: string): string[] {
@@ -39,14 +71,15 @@ function shouldFlattenTail(levels: string[][]): boolean {
 }
 
 function addChild(parent: TreeNode, rawName: string, nodes: Map<string, TreeNode>): TreeNode {
-  const { name, vertical } = cleanName(rawName);
+  const clean = cleanName(rawName);
+  const { name } = clean;
   let node = nodes.get(name);
 
   if (!node) {
-    node = new TreeNode(name, vertical);
+    node = new TreeNode(name, clean.vertical, clean.rank);
     nodes.set(name, node);
-  } else if (vertical) {
-    node.vertical = true;
+  } else {
+    applyFlags(node, clean);
   }
 
   if (!parent.children.has(name)) {
@@ -77,7 +110,12 @@ export function parseTree(text: string): TreeNode {
     let start = 0;
 
     if (startsFromExisting) {
-      parents = levels[0].map((name) => nodes.get(cleanName(name).name) as TreeNode);
+      parents = levels[0].map((rawName) => {
+        const clean = cleanName(rawName);
+        const node = nodes.get(clean.name) as TreeNode;
+        applyFlags(node, clean);
+        return node;
+      });
       start = 1;
     }
 
