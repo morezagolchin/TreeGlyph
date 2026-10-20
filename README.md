@@ -70,6 +70,8 @@ Excavatae:""Single-celled, mostly flagellated eukaryotes""
 Chromalveolatae:""Algae and protists with red-algal plastids"",Eukaryota:""Organisms whose cells have a nucleus""
 ```
 
+While you type a name inside a TreeGlyph block, TreeGlyph suggests names already used in that block. Pick one with the arrow keys and Enter (or a click), or press Escape to keep typing. There are no suggestions while you type inside `((…))` or `:""…""`.
+
 Use either `treeglyph` or the shorter `tg` as the code block language:
 
 ````markdown

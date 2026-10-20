@@ -1,5 +1,6 @@
 import { Plugin } from "obsidian";
 import { renderTreeGlyph } from "./renderer";
+import { NameSuggest } from "./suggest";
 
 const LANGUAGES = ["treeglyph", "tg"];
 
@@ -10,6 +11,8 @@ export default class TreeGlyphPlugin extends Plugin {
         this.renderBlock(source, el);
       });
     });
+
+    this.registerEditorSuggest(new NameSuggest(this.app, LANGUAGES));
   }
 
   private renderBlock(source: string, el: HTMLElement): void {

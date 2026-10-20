@@ -123,6 +123,41 @@ function addChild(parent: TreeNode, rawName: string, nodes: Map<string, TreeNode
   return node;
 }
 
+// Every distinct name in a block. Unlike parseTree, it never fails on half-typed lines.
+export function collectNames(text: string): string[] {
+  const names = new Set<string>();
+
+  text.split(/\r?\n/).forEach((line) => {
+    splitOutsideProtected(line, "/").forEach((level) => {
+      splitLevel(level).forEach((rawName) => {
+        try {
+          names.add(cleanName(rawName).name);
+        } catch {
+          // A name with nothing but details, such as a lone ((alternative name)).
+        }
+      });
+    });
+  });
+
+  return [...names];
+}
+
+// The name being typed at the end of `textBeforeCursor`, and where it starts. Null while the
+// cursor is inside an unfinished ((alternative name)) or :""tooltip"".
+export function nameBeingTyped(textBeforeCursor: string): { start: number; name: string } | null {
+  const masked = textBeforeCursor.replace(PROTECTED, (region) => MASK.repeat(region.length));
+  if (/\(\(|:\s*""/.test(masked)) {
+    return null;
+  }
+
+  let start = Math.max(masked.lastIndexOf("/"), masked.lastIndexOf(",")) + 1;
+  // At the start of a line, also skip the `>` of a code block inside a callout or quote.
+  const skip = start === 0 ? /^[\s>]*/ : /^\s*/;
+  start += (skip.exec(masked.slice(start)) as RegExpExecArray)[0].length;
+
+  return { start, name: textBeforeCursor.slice(start) };
+}
+
 // Returns a nameless root whose children are the top-level trees.
 export function parseTree(text: string): TreeNode {
   const root = new TreeNode("");
