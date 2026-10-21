@@ -70,6 +70,14 @@ Excavatae:""Single-celled, mostly flagellated eukaryotes""
 Chromalveolatae:""Algae and protists with red-algal plastids"",Eukaryota:""Organisms whose cells have a nucleus""
 ```
 
+A tooltip may run over several lines. Everything from the opening `""` to the closing `""` belongs to it, and its line breaks count as spaces, so a long text can be wrapped however you like. A tooltip that is never closed is reported as an error:
+
+```txt
+Eukaryota/Chromalveolatae,Excavatae
+Excavatae:""Single-celled, mostly flagellated
+  eukaryotes, many of them parasites""
+```
+
 While you type a name inside a TreeGlyph block, TreeGlyph suggests names already used in that block. Pick one with the arrow keys and Enter (or a click), or press Escape to keep typing. There are no suggestions while you type inside `((…))` or `:""…""`.
 
 Use either `treeglyph` or the shorter `tg` as the code block language:

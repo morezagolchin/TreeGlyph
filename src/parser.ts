@@ -29,7 +29,35 @@ const TOOLTIP = /:\s*""(.*?)""/;
 
 // ((Alternative names)) and :""tooltips"" may contain anything, separators included.
 const PROTECTED = /\(\(.*?\)\)|:\s*"".*?""/g;
+const OPEN_TOOLTIP = /:\s*""/;
 const MASK = "\u0000";
+
+type BlockLine = { number: number; text: string };
+
+function hasOpenTooltip(text: string): boolean {
+  return OPEN_TOOLTIP.test(text.replace(PROTECTED, ""));
+}
+
+// The lines of a block. A :""tooltip"" may run over several lines; they are joined into the line
+// it starts on, so its line breaks count as spaces. `number` is where each line starts.
+function blockLines(text: string): BlockLine[] {
+  const lines: BlockLine[] = [];
+  let current: BlockLine | null = null;
+
+  text.split(/\r?\n/).forEach((rawLine, index) => {
+    if (current) {
+      current.text = `${current.text.trimEnd()} ${rawLine.trim()}`;
+    } else {
+      current = { number: index + 1, text: rawLine };
+      lines.push(current);
+    }
+    if (!hasOpenTooltip(current.text)) {
+      current = null;
+    }
+  });
+
+  return lines;
+}
 
 // Splits on `separator`, except inside protected text.
 function splitOutsideProtected(text: string, separator: string): string[] {
@@ -127,7 +155,7 @@ function addChild(parent: TreeNode, rawName: string, nodes: Map<string, TreeNode
 export function collectNames(text: string): string[] {
   const names = new Set<string>();
 
-  text.split(/\r?\n/).forEach((line) => {
+  blockLines(text).forEach(({ text: line }) => {
     splitOutsideProtected(line, "/").forEach((level) => {
       splitLevel(level).forEach((rawName) => {
         try {
@@ -142,20 +170,38 @@ export function collectNames(text: string): string[] {
   return [...names];
 }
 
-// The name being typed at the end of `textBeforeCursor`, and where it starts. Null while the
-// cursor is inside an unfinished ((alternative name)) or :""tooltip"".
+// The name being typed at the end of `textBeforeCursor` (the block up to the cursor), and where
+// it starts on the cursor's line. Null while the cursor is inside an unfinished
+// ((alternative name)) or :""tooltip"", or right after a tooltip that began on an earlier line.
 export function nameBeingTyped(textBeforeCursor: string): { start: number; name: string } | null {
-  const masked = textBeforeCursor.replace(PROTECTED, (region) => MASK.repeat(region.length));
+  const lines = textBeforeCursor.split(/\r?\n/);
+  const line = lines[lines.length - 1];
+  const blocks = blockLines(textBeforeCursor);
+
+  // A tooltip from an earlier line runs onto this one; it ends at the first "".
+  let from = 0;
+  if (blocks[blocks.length - 1].number < lines.length) {
+    from = line.indexOf('""') + 2;
+    if (from < 2) {
+      return null;
+    }
+  }
+
+  const rest = line.slice(from).replace(PROTECTED, (region) => MASK.repeat(region.length));
+  const masked = MASK.repeat(from) + rest;
   if (/\(\(|:\s*""/.test(masked)) {
     return null;
   }
 
   let start = Math.max(masked.lastIndexOf("/"), masked.lastIndexOf(",")) + 1;
+  if (start < from) {
+    return null;
+  }
   // At the start of a line, also skip the `>` of a code block inside a callout or quote.
   const skip = start === 0 ? /^[\s>]*/ : /^\s*/;
   start += (skip.exec(masked.slice(start)) as RegExpExecArray)[0].length;
 
-  return { start, name: textBeforeCursor.slice(start) };
+  return { start, name: line.slice(start) };
 }
 
 // Returns a nameless root whose children are the top-level trees.
@@ -164,20 +210,23 @@ export function parseTree(text: string): TreeNode {
   const nodes = new Map<string, TreeNode>();
   const tooltipLines: Array<{ line: number; names: string[] }> = [];
 
-  text.split(/\r?\n/).forEach((rawLine, index) => {
+  blockLines(text).forEach(({ number, text: rawLine }) => {
     const line = rawLine.trim();
     if (!line) {
       return;
     }
+    if (hasOpenTooltip(line)) {
+      throw new Error(`line ${number}: tooltip is not closed with ""`);
+    }
 
     const levels = splitOutsideProtected(line, "/").map(splitLevel);
     if (levels.some((level) => level.length === 0)) {
-      throw new Error(`line ${index + 1}: empty level in ${line}`);
+      throw new Error(`line ${number}: empty level in ${line}`);
     }
 
     // A line of names that all have tooltips only describes them, so it can go anywhere.
     if (levels.length === 1 && levels[0].every((name) => cleanName(name).tooltip)) {
-      tooltipLines.push({ line: index + 1, names: levels[0] });
+      tooltipLines.push({ line: number, names: levels[0] });
       return;
     }
 

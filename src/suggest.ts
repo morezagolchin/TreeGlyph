@@ -21,12 +21,14 @@ export class NameSuggest extends EditorSuggest<string> {
       return null;
     }
 
-    const typed = nameBeingTyped(editor.getLine(cursor.line).slice(0, cursor.ch));
+    // A tooltip may run over several lines, so the lines above the cursor count too.
+    const above = block.lines.slice(0, cursor.line - block.first);
+    const typed = nameBeingTyped([...above, editor.getLine(cursor.line).slice(0, cursor.ch)].join("\n"));
     if (!typed || !typed.name.trim()) {
       return null;
     }
 
-    this.names = collectNames(block);
+    this.names = collectNames(block.lines.join("\n"));
     return { start: { line: cursor.line, ch: typed.start }, end: cursor, query: typed.name };
   }
 
@@ -64,8 +66,9 @@ export class NameSuggest extends EditorSuggest<string> {
     editor.setCursor({ line: start.line, ch: start.ch + name.length });
   }
 
-  // The text of the TreeGlyph block the line is in, or null when it isn't in one.
-  private blockAround(editor: Editor, line: number): string | null {
+  // The lines of the TreeGlyph block the line is in, and the editor line of the first one, or
+  // null when it isn't in one.
+  private blockAround(editor: Editor, line: number): { first: number; lines: string[] } | null {
     if (FENCE.test(editor.getLine(line))) {
       return null;
     }
@@ -89,6 +92,6 @@ export class NameSuggest extends EditorSuggest<string> {
     for (let index = open + 1; index < close; index += 1) {
       lines.push(editor.getLine(index).replace(/^[\s>]*/, ""));
     }
-    return lines.join("\n");
+    return { first: open + 1, lines };
   }
 }
